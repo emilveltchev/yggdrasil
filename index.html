@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yggdrasil</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background: #1a1a1a;
+            cursor: crosshair;
+        }
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #666;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="hp">HP: 100</div>
+        <div id="level">Level: 1</div>
+    </div>
+    <canvas id="game"></canvas>
+    
+    <script src="src/input.js"></script>
+    <script src="src/render.js"></script>
+    <script src="src/blood.js"></script>
+    <script src="src/player.js"></script>
+    <script src="src/enemies.js"></script>
+    <script src="src/combat.js"></script>
+    <script src="src/levels.js"></script>
+    <script src="src/game.js"></script>
+</body>
+</html>
