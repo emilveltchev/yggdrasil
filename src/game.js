@@ -19,36 +19,56 @@ const Game = {
     transitionText: '',
     
     init() {
+        const debug = document.getElementById('debug');
+        debug.textContent = 'Initializing...';
+        
         this.canvas = document.getElementById('game');
         this.ctx = this.canvas.getContext('2d');
+        
+        debug.textContent = 'Canvas: ' + (this.canvas ? 'OK' : 'FAIL');
         
         Render.init(this.canvas);
         Input.init(this.canvas);
         
+        debug.textContent = 'Render/Input: OK';
+        
         // Start game loop
         this.lastTime = performance.now();
+        this.frameCount = 0;
         requestAnimationFrame((t) => this.loop(t));
         
         // Start at title
         this.state = 'title';
+        debug.textContent = 'Game started - click to play';
     },
     
     loop(timestamp) {
-        // Calculate delta time
-        this.deltaTime = Math.min(timestamp - this.lastTime, 50); // Cap at 50ms
-        this.lastTime = timestamp;
-        
-        // Update
-        this.update(this.deltaTime);
-        
-        // Render
-        this.render();
-        
-        // End frame
-        Input.endFrame();
-        
-        // Next frame
-        requestAnimationFrame((t) => this.loop(t));
+        try {
+            // Calculate delta time
+            this.deltaTime = Math.min(timestamp - this.lastTime, 50); // Cap at 50ms
+            this.lastTime = timestamp;
+            
+            // Update frame counter
+            this.frameCount++;
+            if (this.frameCount % 60 === 0) {
+                document.getElementById('debug').textContent = 'Frame: ' + this.frameCount + ' State: ' + this.state;
+            }
+            
+            // Update
+            this.update(this.deltaTime);
+            
+            // Render
+            this.render();
+            
+            // End frame
+            Input.endFrame();
+            
+            // Next frame
+            requestAnimationFrame((t) => this.loop(t));
+        } catch(e) {
+            console.error('Game loop error:', e);
+            document.getElementById('debug').textContent = 'ERROR: ' + e.message;
+        }
     },
     
     update(dt) {
@@ -301,4 +321,13 @@ const Game = {
 };
 
 // Start the game when page loads
-window.addEventListener('load', () => Game.init());
+window.addEventListener('load', () => {
+    console.log('Window loaded, starting game...');
+    try {
+        Game.init();
+        console.log('Game initialized successfully');
+    } catch(e) {
+        console.error('Game init error:', e);
+        alert('Game error: ' + e.message);
+    }
+});
