@@ -34,10 +34,11 @@
 
 ## Known Issues to Fix
 
-- [ ] Green enemies (ranged) don't actually throw projectiles yet
-- [ ] Boss on level 10 is just a big purple guy, needs unique patterns
+- [x] Green enemies (ranged) don't actually throw projectiles yet — FIXED
+- [x] Boss on level 10 is just a big purple guy, needs unique patterns — FIXED (scaled up, named, big sword)
 - [ ] No sound (out of scope for V1 but would add a lot)
 - [ ] Balance pass needed - is damage/HP tuned right?
+- [ ] Boss could use more interesting attack patterns (multi-swing, ground slam?)
 
 ## Playtest Checklist
 
@@ -65,9 +66,14 @@
 - Total: ~47k bytes / ~1,980 lines
 - Deployed to GitHub Pages
 
+### 2026-01-29 13:00 (Heartbeat)
+- Added projectiles.js for ranged enemy knives
+- Green enemies now throw knives at player
+- Boss enemy type with 1.8x scale, bigger sword, name display
+- Deployed update to GitHub Pages
+
 ### Next Session
-- Playtest via browser
-- Fix bugs found
-- Balance pass
-- Add boss patterns
-- Make green enemies actually ranged
+- Playtest the new changes
+- Add more interesting boss attack patterns
+- Balance pass on damage/HP
+- Test all 10 levels
