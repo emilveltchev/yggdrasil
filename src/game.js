@@ -99,6 +99,9 @@ const Game = {
         // Update blood
         Blood.update(this.groundY);
         
+        // Update projectiles
+        Projectiles.update(dt, Player, this.groundY);
+        
         // Update screen shake
         Render.updateShake();
         
@@ -188,6 +191,9 @@ const Game = {
         // Draw blood (behind characters)
         Blood.draw(Render.ctx);
         
+        // Draw projectiles
+        Projectiles.draw(Render.ctx);
+        
         // Draw enemies
         for (const enemy of this.enemies) {
             enemy.draw();
@@ -250,6 +256,7 @@ const Game = {
         this.currentLevel = 1;
         this.state = 'playing';
         Blood.clear();
+        Projectiles.clear();
         
         // Initialize player
         Player.init(200, this.groundY);

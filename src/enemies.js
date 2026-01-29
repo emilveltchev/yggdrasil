@@ -17,6 +17,12 @@ class Enemy {
         this.attackRange = stats.attackRange || 50;
         this.attackCooldown = 0;
         this.attackDuration = stats.attackDuration || 800;
+        this.scale = stats.scale || 1;
+        this.isBoss = stats.isBoss || false;
+        
+        // Boss has special attack patterns
+        this.bossPhase = 0; // 0 = normal, 1 = rage (below 50% hp)
+        this.specialAttackTimer = 0;
         
         // Animation state
         this.walkCycle = Math.random() * Math.PI * 2;
@@ -122,8 +128,17 @@ class Enemy {
         this.attackTimer = this.attackDuration;
         this.attackCooldown = this.attackDuration + 500;
         
-        // Wind up - pull sword back
-        this.swordAngle = this.facingRight ? -1.5 : 1.5;
+        // Check if ranged
+        const stats = Enemy.TYPES[this.type];
+        if (stats && stats.ranged) {
+            // Ranged attack - throw projectile
+            this.isRangedAttack = true;
+            this.threwProjectile = false;
+        } else {
+            // Melee attack - wind up sword
+            this.isRangedAttack = false;
+            this.swordAngle = this.facingRight ? -1.5 : 1.5;
+        }
     }
     
     updateAttack(dt, player) {
@@ -131,23 +146,49 @@ class Enemy {
         
         const progress = 1 - (this.attackTimer / this.attackDuration);
         
-        if (progress < 0.3) {
-            // Wind up
-            const windupTarget = this.facingRight ? -1.5 : 1.5;
-            this.swordAngle += (windupTarget - this.swordAngle) * 0.2;
-        } else if (progress < 0.6) {
-            // Swing!
-            const swingTarget = this.facingRight ? 1.5 : -1.5;
-            this.swordAngle += (swingTarget - this.swordAngle) * 0.4;
-            
-            // Check hit on player
-            if (progress > 0.35 && progress < 0.55) {
-                this.checkHitPlayer(player);
+        if (this.isRangedAttack) {
+            // Ranged attack animation
+            if (progress < 0.4) {
+                // Wind up - arm back
+                const windupTarget = this.facingRight ? -1.2 : 1.2;
+                this.swordAngle += (windupTarget - this.swordAngle) * 0.15;
+            } else if (progress < 0.6) {
+                // Throw!
+                const throwTarget = this.facingRight ? 1.0 : -1.0;
+                this.swordAngle += (throwTarget - this.swordAngle) * 0.4;
+                
+                // Spawn projectile at the right moment
+                if (!this.threwProjectile && progress > 0.45) {
+                    this.threwProjectile = true;
+                    const throwX = this.x + (this.facingRight ? 30 : -30);
+                    const throwY = this.y - 35;
+                    Projectiles.spawn(throwX, throwY, player.x, player.y - 30, this.damage, 10, this.color);
+                }
+            } else {
+                // Recovery
+                const restTarget = this.facingRight ? 0.3 : -0.3;
+                this.swordAngle += (restTarget - this.swordAngle) * 0.1;
             }
         } else {
-            // Recovery
-            const restTarget = this.facingRight ? 0.5 : -0.5;
-            this.swordAngle += (restTarget - this.swordAngle) * 0.1;
+            // Melee attack
+            if (progress < 0.3) {
+                // Wind up
+                const windupTarget = this.facingRight ? -1.5 : 1.5;
+                this.swordAngle += (windupTarget - this.swordAngle) * 0.2;
+            } else if (progress < 0.6) {
+                // Swing!
+                const swingTarget = this.facingRight ? 1.5 : -1.5;
+                this.swordAngle += (swingTarget - this.swordAngle) * 0.4;
+                
+                // Check hit on player
+                if (progress > 0.35 && progress < 0.55) {
+                    this.checkHitPlayer(player);
+                }
+            } else {
+                // Recovery
+                const restTarget = this.facingRight ? 0.5 : -0.5;
+                this.swordAngle += (restTarget - this.swordAngle) * 0.1;
+            }
         }
         
         if (this.attackTimer <= 0) {
@@ -274,23 +315,34 @@ class Enemy {
             x: this.x,
             y: this.y,
             color,
-            scale: 1,
+            scale: this.scale,
             limbs: { armL, armR, legL, legR },
             headTilt: breath
         });
         
-        // Draw sword
-        const shoulderY = this.y - 35;
+        // Draw sword (scaled)
+        const shoulderY = this.y - 35 * this.scale;
         const armAngle = this.swordAngle * 0.5;
-        const handX = this.x + Math.sin(armAngle) * 30;
-        const handY = shoulderY + Math.cos(armAngle) * 30;
+        const handX = this.x + Math.sin(armAngle) * 30 * this.scale;
+        const handY = shoulderY + Math.cos(armAngle) * 30 * this.scale;
         
         const swingProgress = this.isAttacking ? 0.5 : 0;
-        Render.drawSword(handX, handY, this.swordAngle, 50, swingProgress);
+        const swordLength = this.isBoss ? 80 : 50;
+        Render.drawSword(handX, handY, this.swordAngle, swordLength * this.scale, swingProgress);
         
-        // HP bar
-        if (this.hp < this.maxHP) {
-            Render.drawHPBar(this.x, this.y - 80, this.hp, this.maxHP);
+        // HP bar (bigger for boss)
+        if (this.hp < this.maxHP || this.isBoss) {
+            const barWidth = this.isBoss ? 120 : 50;
+            const barY = this.y - 80 * this.scale - 10;
+            Render.drawHPBar(this.x, barY, this.hp, this.maxHP, barWidth);
+            
+            // Boss name
+            if (this.isBoss) {
+                Render.ctx.fillStyle = '#aa0000';
+                Render.ctx.font = 'bold 16px Arial';
+                Render.ctx.textAlign = 'center';
+                Render.ctx.fillText('THE GIANT', this.x, barY - 10);
+            }
         }
     }
     
@@ -341,8 +393,18 @@ Enemy.TYPES = {
         speed: 1.5,
         damage: 12,
         color: '#44aa44',
-        attackRange: 300, // Ranged
+        attackRange: 300,
         attackDuration: 1500,
         ranged: true
+    },
+    boss: {
+        hp: 250,
+        speed: 1.8,
+        damage: 25,
+        color: '#aa0000',
+        attackRange: 100,
+        attackDuration: 1000,
+        scale: 1.8,
+        isBoss: true
     }
 };

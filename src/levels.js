@@ -110,19 +110,8 @@ const Levels = {
         const enemies = [];
         
         for (const def of level.enemies) {
-            if (def.type === 'boss') {
-                // Create boss enemy (bigger, more HP)
-                const boss = new Enemy(def.x, groundY, 'purple');
-                boss.hp = 200;
-                boss.maxHP = 200;
-                boss.damage = 25;
-                boss.attackDuration = 1000;
-                boss.scale = 1.5;
-                boss.isBoss = true;
-                enemies.push(boss);
-            } else {
-                enemies.push(new Enemy(def.x, groundY, def.type));
-            }
+            const enemy = new Enemy(def.x, groundY, def.type);
+            enemies.push(enemy);
         }
         
         return enemies;
