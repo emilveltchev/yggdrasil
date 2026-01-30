@@ -235,8 +235,16 @@ const Player = {
         }
         
         // Ground collision
+        const wasGrounded = this.grounded;
         if (this.y >= groundY) {
             this.y = groundY;
+            
+            // Landing dust
+            if (!wasGrounded && this.vy > 5) {
+                Effects.spawnDust(this.x, groundY, 8);
+                Render.shake(3);
+            }
+            
             this.vy = 0;
             this.grounded = true;
             this.onWall = false;
@@ -276,6 +284,9 @@ const Player = {
             const mag = Math.sqrt(dashDirX * dashDirX + dashDirY * dashDirY);
             this.dashVx = (dashDirX / mag) * this.DASH_SPEED;
             this.dashVy = (dashDirY / mag) * this.DASH_SPEED;
+            
+            // Dash dust
+            Effects.spawnDust(this.x, this.y, 10);
         }
         
         // Animation cycles

@@ -218,6 +218,8 @@ class Enemy {
         
         Blood.burst(this.x, this.y - 20);
         Render.shake(20);
+        Effects.onKill();
+        Effects.spawnSparks(this.x, this.y - 30, 12);
         
         // Create ragdoll body
         this.ragdoll = {

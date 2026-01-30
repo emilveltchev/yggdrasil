@@ -53,9 +53,9 @@ const Game = {
             if (this.frameCount % 60 === 0) {
                 const aliveEnemies = this.enemies ? this.enemies.filter(e => !e.dead).length : 0;
                 document.getElementById('debug').textContent = 
-                    'v4 | ' + this.state + 
+                    'v5 | ' + this.state + 
                     ' | E:' + aliveEnemies +
-                    ' | C:' + (Player.comboCount || 0);
+                    ' | Combo:' + (Player.comboCount || 0);
             }
             
             // Update
@@ -109,12 +109,25 @@ const Game = {
     },
     
     updatePlaying(dt) {
+        // Apply slow-mo time scale
+        const timeScale = Effects.getTimeScale();
+        const scaledDt = dt * timeScale;
+        
+        // Update effects (always full speed)
+        Effects.update(dt);
+        
         // Update player
-        Player.update(dt, this.groundY, Render.canvas.width);
+        Player.update(scaledDt, this.groundY, Render.canvas.width);
+        
+        // Add sword trail during swing
+        if (Player.isSwingActive()) {
+            const hitbox = Player.getSwordHitbox();
+            Effects.addTrailPoint(hitbox.x1, hitbox.y1, hitbox.x2, hitbox.y2);
+        }
         
         // Update enemies
         for (const enemy of this.enemies) {
-            enemy.update(dt, Player, this.groundY, Render.canvas.width);
+            enemy.update(scaledDt, Player, this.groundY, Render.canvas.width);
         }
         
         // Combat checks
@@ -124,7 +137,7 @@ const Game = {
         Blood.update(this.groundY);
         
         // Update projectiles
-        Projectiles.update(dt, Player, this.groundY);
+        Projectiles.update(scaledDt, Player, this.groundY);
         
         // Update screen shake
         Render.updateShake();
@@ -226,6 +239,9 @@ const Game = {
         // Draw player
         Player.draw();
         
+        // Draw effects overlay
+        Effects.draw(Render.ctx);
+        
         // Level complete overlay
         if (this.state === 'levelComplete') {
             const ctx = Render.ctx;
@@ -280,6 +296,7 @@ const Game = {
         this.currentLevel = 1;
         Blood.clear();
         Projectiles.clear();
+        Effects.clear();
         
         // Initialize player
         Player.init(200, this.groundY);

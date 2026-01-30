@@ -39,15 +39,20 @@ const Combat = {
                     
                     const knockbackDir = enemy.x > player.x ? 1 : -1;
                     
+                    // Spawn hit sparks
+                    const hitX = (player.x + enemy.x) / 2;
+                    const hitY = enemy.y - 30;
+                    Effects.spawnSparks(hitX, hitY, 6);
+                    
                     // Apply damage with attack properties
                     enemy.takeDamage(damage, knockbackDir * knockback / 8, isLaunch);
                     
                     // Hitstop on player
                     player.hitstopFrames = isLaunch ? 8 : 5;
                     
-                    // Slow-mo effect for kills
+                    // Slow-mo and extra hitstop for kills
                     if (enemy.hp <= 0) {
-                        player.hitstopFrames = 12;
+                        player.hitstopFrames = 15;
                     }
                 }
             }
