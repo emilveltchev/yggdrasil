@@ -3,10 +3,50 @@
 const Combat = {
     hitThisSwing: new Set(),
     
+    kickHitThisFrame: new Set(),
+    
     update(player, enemies) {
         // Reset hit tracking when swing ends
         if (!player.isSwingActive()) {
             this.hitThisSwing.clear();
+        }
+        
+        // Reset kick hit tracking each frame
+        if (!player.isKicking) {
+            this.kickHitThisFrame.clear();
+        }
+        
+        // Check kick vs enemies
+        const kickHitbox = player.getKickHitbox();
+        if (kickHitbox) {
+            for (const enemy of enemies) {
+                if (enemy.dead) continue;
+                if (this.kickHitThisFrame.has(enemy)) continue;
+                
+                // Simple box check for kick
+                const enemyBox = {
+                    x: enemy.x - 20,
+                    y: enemy.y - 50,
+                    width: 40,
+                    height: 50
+                };
+                
+                if (this.boxesOverlap(kickHitbox, enemyBox)) {
+                    this.kickHitThisFrame.add(enemy);
+                    
+                    // Kick does less damage but big knockback
+                    const knockbackDir = enemy.x > player.x ? 1 : -1;
+                    enemy.takeDamage(10, knockbackDir * 2, false);
+                    
+                    // Stagger enemy (interrupt their attack)
+                    enemy.state = 'hurt';
+                    enemy.stateTimer = 400;
+                    enemy.isAttacking = false;
+                    
+                    Effects.spawnDust(enemy.x, enemy.y, 5);
+                    player.hitstopFrames = 4;
+                }
+            }
         }
         
         // Check player sword vs enemies
@@ -68,6 +108,13 @@ const Combat = {
             sword.x1, sword.y1, sword.x2, sword.y2,
             enemyCenterX, enemyCenterY, enemyRadius
         );
+    },
+    
+    boxesOverlap(a, b) {
+        return a.x < b.x + b.width &&
+               a.x + a.width > b.x &&
+               a.y < b.y + b.height &&
+               a.y + a.height > b.y;
     },
     
     lineCircleIntersect(x1, y1, x2, y2, cx, cy, r) {

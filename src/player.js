@@ -31,6 +31,13 @@ const Player = {
     // Attack types
     attackType: 'slash', // slash, overhead, thrust, uppercut
     
+    // Kick
+    isKicking: false,
+    kickTimer: 0,
+    KICK_DURATION: 200,
+    KICK_COOLDOWN: 400,
+    kickCooldown: 0,
+    
     // Swing state machine
     swingState: 'ready', // ready, windup, swing, followthrough, cooldown
     swingTimer: 0,
@@ -305,13 +312,54 @@ const Player = {
         // Update sword based on swing state
         this.updateSwing(dt);
         
+        // Kick cooldown
+        if (this.kickCooldown > 0) this.kickCooldown -= dt;
+        
+        // Handle kick
+        if (this.isKicking) {
+            this.kickTimer -= dt;
+            if (this.kickTimer <= 0) {
+                this.isKicking = false;
+            }
+        }
+        
+        // Start kick with E key
+        if (Input.keys['e'] && !Input.prevKeys?.['e'] && !this.isKicking && this.kickCooldown <= 0 && this.grounded) {
+            this.startKick();
+        }
+        
         // Start attack on click
-        if (Input.mouse.clicked && this.swingState === 'ready') {
+        if (Input.mouse.clicked && this.swingState === 'ready' && !this.isKicking) {
             this.startAttack();
         }
         
         // Store previous keys for edge detection
         Input.prevKeys = { ...Input.keys };
+    },
+    
+    startKick() {
+        this.isKicking = true;
+        this.kickTimer = this.KICK_DURATION;
+        this.kickCooldown = this.KICK_COOLDOWN;
+        
+        // Kick propels player forward slightly
+        this.vx = (this.facingRight ? 1 : -1) * 8;
+        
+        Effects.spawnDust(this.x, this.y, 5);
+    },
+    
+    // Check if kick hits an enemy
+    getKickHitbox() {
+        if (!this.isKicking) return null;
+        
+        const kickRange = 50;
+        const kickX = this.x + (this.facingRight ? kickRange/2 : -kickRange/2);
+        return {
+            x: kickX,
+            y: this.y - 20,
+            width: kickRange,
+            height: 40
+        };
     },
     
     startAttack() {
@@ -565,7 +613,18 @@ const Player = {
         let legL = -0.2 + walk * 0.4;
         let legR = 0.2 - walk * 0.4;
         
-        if (this.isDashing) {
+        if (this.isKicking) {
+            // Kick pose - one leg extended
+            armL = -0.5;
+            armR = 0.5;
+            if (this.facingRight) {
+                legL = -0.3;
+                legR = 1.4; // Extended kick leg
+            } else {
+                legL = -1.4;
+                legR = 0.3;
+            }
+        } else if (this.isDashing) {
             armL = -0.8;
             armR = 0.8;
             legL = -0.6;

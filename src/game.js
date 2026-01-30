@@ -53,8 +53,8 @@ const Game = {
             if (this.frameCount % 60 === 0) {
                 const aliveEnemies = this.enemies ? this.enemies.filter(e => !e.dead).length : 0;
                 document.getElementById('debug').textContent = 
-                    'v5 | ' + this.state + 
-                    ' | E:' + aliveEnemies +
+                    'v6 | Lvl ' + this.currentLevel +
+                    ' | Enemies:' + aliveEnemies +
                     ' | Combo:' + (Player.comboCount || 0);
             }
             
