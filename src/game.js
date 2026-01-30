@@ -51,12 +51,12 @@ const Game = {
             // Update frame counter
             this.frameCount++;
             if (this.frameCount % 30 === 0) {
+                const aliveEnemies = this.enemies.filter(e => !e.dead).length;
                 document.getElementById('debug').textContent = 
-                    'F:' + this.frameCount + 
-                    ' S:' + this.state + 
-                    ' K:' + Input.moveX + ',' + Input.moveY +
-                    ' P:' + Math.round(Player.x) + ',' + Math.round(Player.y) +
-                    ' SW:' + Player.swingState;
+                    'v3 S:' + this.state + 
+                    ' E:' + aliveEnemies + '/' + this.enemies.length +
+                    ' P:' + Math.round(Player.x) +
+                    ' K:' + Input.moveX;
             }
             
             // Update
