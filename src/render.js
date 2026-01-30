@@ -64,10 +64,10 @@ const Render = {
     },
     
     // Draw a stick figure
-    // figure: { x, y, color, scale, limbs: { armL, armR, legL, legR }, headTilt }
+    // figure: { x, y, color, scale, limbs: { armL, armR, legL, legR }, headTilt, noHead }
     drawStickFigure(figure) {
         const ctx = this.ctx;
-        const { x, y, color = '#ffffff', scale = 1, limbs = {}, headTilt = 0 } = figure;
+        const { x, y, color = '#ffffff', scale = 1, limbs = {}, headTilt = 0, noHead = false } = figure;
         
         const s = scale;
         const headRadius = 15 * s;
@@ -91,10 +91,19 @@ const Render = {
         const legL = limbs.legL ?? -0.2;
         const legR = limbs.legR ?? 0.2;
         
-        // Head
-        ctx.beginPath();
-        ctx.arc(x, headY + headTilt * 3, headRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        // Head (unless decapitated)
+        if (!noHead) {
+            ctx.beginPath();
+            ctx.arc(x, headY + headTilt * 3, headRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        } else {
+            // Neck stump
+            ctx.fillStyle = '#8B0000';
+            ctx.beginPath();
+            ctx.arc(x, headY + headRadius, 6 * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = color;
+        }
         
         // Body
         ctx.beginPath();

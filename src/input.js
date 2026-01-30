@@ -63,6 +63,9 @@ const Input = {
     },
     
     get dash() {
-        return this.keys[' '];
-    }
+        return this.keys['shift'];
+    },
+    
+    // Store previous frame's keys for edge detection
+    prevKeys: {}
 };

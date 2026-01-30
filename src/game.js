@@ -50,13 +50,12 @@ const Game = {
             
             // Update frame counter
             this.frameCount++;
-            if (this.frameCount % 30 === 0) {
+            if (this.frameCount % 60 === 0) {
                 const aliveEnemies = this.enemies.filter(e => !e.dead).length;
                 document.getElementById('debug').textContent = 
-                    'v3 S:' + this.state + 
-                    ' E:' + aliveEnemies + '/' + this.enemies.length +
-                    ' P:' + Math.round(Player.x) +
-                    ' K:' + Input.moveX;
+                    'v4 | ' + this.state + 
+                    ' | Enemies: ' + aliveEnemies +
+                    ' | Combo: ' + Player.comboCount;
             }
             
             // Update
