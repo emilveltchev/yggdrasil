@@ -54,8 +54,9 @@ const Game = {
                 document.getElementById('debug').textContent = 
                     'F:' + this.frameCount + 
                     ' S:' + this.state + 
-                    ' M:' + Math.round(Input.mouse.x) + ',' + Math.round(Input.mouse.y) +
-                    ' C:' + (Input.mouse.clicked ? 'Y' : 'N');
+                    ' K:' + Input.moveX + ',' + Input.moveY +
+                    ' P:' + Math.round(Player.x) + ',' + Math.round(Player.y) +
+                    ' SW:' + Player.swingState;
             }
             
             // Update
@@ -278,7 +279,6 @@ const Game = {
     
     startGame() {
         this.currentLevel = 1;
-        this.state = 'playing';
         Blood.clear();
         Projectiles.clear();
         
@@ -288,10 +288,8 @@ const Game = {
         // Spawn enemies for level 1
         this.enemies = Levels.spawnEnemies(this.currentLevel, this.groundY);
         
-        // Show level name briefly
-        this.transitionText = Levels.getLevelName(this.currentLevel);
-        this.transitionTimer = 1500;
-        this.state = 'levelComplete';
+        // Go directly to playing
+        this.state = 'playing';
     },
     
     levelComplete() {
@@ -318,9 +316,8 @@ const Game = {
         // Spawn new enemies
         this.enemies = Levels.spawnEnemies(this.currentLevel, this.groundY);
         
-        // Show level name
-        this.transitionText = Levels.getLevelName(this.currentLevel);
-        this.transitionTimer = 1500;
+        // Go to playing state
+        this.state = 'playing';
     }
 };
 
