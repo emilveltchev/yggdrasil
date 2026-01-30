@@ -50,8 +50,12 @@ const Game = {
             
             // Update frame counter
             this.frameCount++;
-            if (this.frameCount % 60 === 0) {
-                document.getElementById('debug').textContent = 'Frame: ' + this.frameCount + ' State: ' + this.state;
+            if (this.frameCount % 30 === 0) {
+                document.getElementById('debug').textContent = 
+                    'F:' + this.frameCount + 
+                    ' S:' + this.state + 
+                    ' M:' + Math.round(Input.mouse.x) + ',' + Math.round(Input.mouse.y) +
+                    ' C:' + (Input.mouse.clicked ? 'Y' : 'N');
             }
             
             // Update

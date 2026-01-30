@@ -18,11 +18,13 @@ const Input = {
             this.keys[e.key.toLowerCase()] = false;
         });
         
-        // Mouse position
+        // Mouse position (scaled to canvas internal resolution)
         canvas.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
-            this.mouse.x = e.clientX - rect.left;
-            this.mouse.y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            this.mouse.x = (e.clientX - rect.left) * scaleX;
+            this.mouse.y = (e.clientY - rect.top) * scaleY;
         });
         
         // Mouse clicks
