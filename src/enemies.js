@@ -44,6 +44,16 @@ class Enemy {
         this.ragdoll = null;
         this.severedHead = null;
         this.decapitated = false;
+        this.severedLimbs = [];
+        
+        // Boss-specific
+        if (this.isBoss) {
+            this.bossPhase = 1;
+            this.bossAttackPattern = 0;
+            this.chargeTimer = 0;
+            this.isCharging = false;
+            this.slamCooldown = 0;
+        }
     }
     
     update(dt, player, groundY, canvasWidth) {
@@ -83,6 +93,23 @@ class Enemy {
             const targetAngle = this.facingRight ? 0.5 : -0.5;
             this.swordAngle += (targetAngle - this.swordAngle) * 0.1;
         }
+        
+        // Update severed limbs physics
+        for (const limb of this.severedLimbs) {
+            limb.vy += 0.4;
+            limb.x += limb.vx;
+            limb.y += limb.vy;
+            limb.rotation += limb.vr;
+            limb.vx *= 0.99;
+            
+            // Bounce off ground
+            if (limb.y > this.y - 5) {
+                limb.y = this.y - 5;
+                limb.vy *= -0.4;
+                limb.vx *= 0.6;
+                limb.vr *= 0.5;
+            }
+        }
     }
     
     updateIdle(dt, player) {
@@ -97,6 +124,31 @@ class Enemy {
         const dist = Math.abs(dx);
         
         this.facingRight = dx > 0;
+        
+        // Boss charge attack
+        if (this.isBoss && this.isCharging) {
+            this.chargeTimer -= dt;
+            this.vx = (this.facingRight ? 1 : -1) * 12;
+            this.x += this.vx;
+            
+            // Check if charge hits player
+            if (Math.abs(this.x - player.x) < 60) {
+                player.takeDamage(this.damage);
+                this.isCharging = false;
+                Render.shake(25);
+                Effects.spawnDust(this.x, this.y, 15);
+            }
+            
+            // End charge
+            if (this.chargeTimer <= 0 || this.x < 50 || this.x > canvasWidth - 50) {
+                this.isCharging = false;
+                this.attackCooldown = 1500;
+                Effects.spawnDust(this.x, this.y, 10);
+            }
+            
+            this.x = Math.max(30, Math.min(canvasWidth - 30, this.x));
+            return;
+        }
         
         if (dist > this.attackRange) {
             this.vx = Math.sign(dx) * this.speed;
@@ -113,6 +165,33 @@ class Enemy {
     }
     
     startAttack(player) {
+        // Boss has special attack patterns
+        if (this.isBoss) {
+            this.bossAttackPattern = (this.bossAttackPattern + 1) % 4;
+            
+            // Pattern 0, 1: Normal swing
+            // Pattern 2: Ground slam
+            // Pattern 3: Charge attack
+            
+            if (this.bossAttackPattern === 3 && Math.abs(player.x - this.x) > 150) {
+                // Charge attack - telegraph then rush
+                this.isCharging = true;
+                this.chargeTimer = 800;
+                this.state = 'approach';
+                Effects.flash('#ff0000', 0.2);
+                return;
+            }
+            
+            if (this.bossAttackPattern === 2) {
+                // Ground slam - AOE attack
+                this.attackDuration = 1200;
+                this.isSlamAttack = true;
+            } else {
+                this.attackDuration = 900;
+                this.isSlamAttack = false;
+            }
+        }
+        
         this.state = 'attack';
         this.isAttacking = true;
         this.attackTimer = this.attackDuration;
@@ -160,6 +239,20 @@ class Enemy {
                 
                 if (progress > 0.35 && progress < 0.55) {
                     this.checkHitPlayer(player);
+                    
+                    // Boss slam AOE
+                    if (this.isBoss && this.isSlamAttack && progress > 0.45 && !this.slamHit) {
+                        this.slamHit = true;
+                        Render.shake(30);
+                        Effects.spawnDust(this.x, this.y, 20);
+                        Blood.spawn(this.x, this.y, 10, 8);
+                        
+                        // AOE damage check
+                        const slamRange = 120;
+                        if (Math.abs(player.x - this.x) < slamRange) {
+                            player.takeDamage(this.damage * 1.5);
+                        }
+                    }
                 }
             } else {
                 const restTarget = this.facingRight ? 0.5 : -0.5;
@@ -169,6 +262,8 @@ class Enemy {
         
         if (this.attackTimer <= 0) {
             this.isAttacking = false;
+            this.slamHit = false;
+            this.isSlamAttack = false;
             this.state = 'approach';
         }
     }
@@ -204,9 +299,39 @@ class Enemy {
         Blood.spawn(this.x, this.y - 30, 25, 10);
         Render.shake(10);
         
+        // Chance to sever limb on heavy damage (if still alive)
+        if (amount > 35 && this.hp > 0 && this.severedLimbs.length < 2 && Math.random() < 0.4) {
+            this.severLimb(knockbackDir);
+        }
+        
         if (this.hp <= 0) {
             this.die(knockbackDir, amount > 30);
         }
+    }
+    
+    severLimb(knockbackDir) {
+        // Determine which limb to sever
+        const limbType = this.severedLimbs.length === 0 ? 
+            (Math.random() < 0.5 ? 'armL' : 'armR') :
+            (this.severedLimbs[0].type === 'armL' ? 'armR' : 'armL');
+        
+        const limbY = this.y - 35 * this.scale;
+        const limbX = this.x + (limbType === 'armR' ? 15 : -15) * this.scale;
+        
+        this.severedLimbs.push({
+            type: limbType,
+            x: limbX,
+            y: limbY,
+            vx: knockbackDir * (8 + Math.random() * 5),
+            vy: -6 - Math.random() * 4,
+            rotation: 0,
+            vr: (Math.random() - 0.5) * 0.5,
+            length: 30 * this.scale
+        });
+        
+        // Extra blood from stump
+        Blood.spawn(limbX, limbY, 30, 12);
+        Effects.flash('#880000', 0.15);
     }
     
     die(knockbackDir = 1, wasHeavyHit = false) {
@@ -338,14 +463,62 @@ class Enemy {
         let legL = -0.2 + walk * 0.3;
         let legR = 0.2 - walk * 0.3;
         
+        // Check for severed limbs
+        const hasArmL = !this.severedLimbs.some(l => l.type === 'armL');
+        const hasArmR = !this.severedLimbs.some(l => l.type === 'armR');
+        
         Render.drawStickFigure({
             x: this.x,
             y: this.y,
             color,
             scale: this.scale,
-            limbs: { armL, armR, legL, legR },
+            limbs: { 
+                armL: hasArmL ? armL : null, 
+                armR: hasArmR ? armR : null, 
+                legL, 
+                legR 
+            },
             headTilt: breath
         });
+        
+        // Draw severed limb stumps (bloody)
+        if (!hasArmL || !hasArmR) {
+            const shoulderY = this.y - 35 * this.scale;
+            ctx.fillStyle = '#8B0000';
+            if (!hasArmL) {
+                ctx.beginPath();
+                ctx.arc(this.x - 5 * this.scale, shoulderY, 4 * this.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            if (!hasArmR) {
+                ctx.beginPath();
+                ctx.arc(this.x + 5 * this.scale, shoulderY, 4 * this.scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Draw flying severed limbs
+        for (const limb of this.severedLimbs) {
+            ctx.save();
+            ctx.translate(limb.x, limb.y);
+            ctx.rotate(limb.rotation);
+            
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 4 * this.scale;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, limb.length);
+            ctx.stroke();
+            
+            // Bloody stump end
+            ctx.fillStyle = '#8B0000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4 * this.scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
         
         // Draw sword
         const shoulderY = this.y - 35 * this.scale;

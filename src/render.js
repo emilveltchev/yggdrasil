@@ -111,21 +111,27 @@ const Render = {
         ctx.lineTo(x, hipY);
         ctx.stroke();
         
-        // Left arm
-        ctx.beginPath();
-        ctx.moveTo(x, shoulderY);
-        const armLEndX = x + Math.sin(armL) * limbLength;
-        const armLEndY = shoulderY + Math.cos(armL) * limbLength;
-        ctx.lineTo(armLEndX, armLEndY);
-        ctx.stroke();
+        // Left arm (if not severed)
+        let armLEndX = x, armLEndY = shoulderY;
+        if (armL !== null) {
+            ctx.beginPath();
+            ctx.moveTo(x, shoulderY);
+            armLEndX = x + Math.sin(armL) * limbLength;
+            armLEndY = shoulderY + Math.cos(armL) * limbLength;
+            ctx.lineTo(armLEndX, armLEndY);
+            ctx.stroke();
+        }
         
-        // Right arm
-        ctx.beginPath();
-        ctx.moveTo(x, shoulderY);
-        const armREndX = x + Math.sin(armR) * limbLength;
-        const armREndY = shoulderY + Math.cos(armR) * limbLength;
-        ctx.lineTo(armREndX, armREndY);
-        ctx.stroke();
+        // Right arm (if not severed)
+        let armREndX = x, armREndY = shoulderY;
+        if (armR !== null) {
+            ctx.beginPath();
+            ctx.moveTo(x, shoulderY);
+            armREndX = x + Math.sin(armR) * limbLength;
+            armREndY = shoulderY + Math.cos(armR) * limbLength;
+            ctx.lineTo(armREndX, armREndY);
+            ctx.stroke();
+        }
         
         // Left leg
         ctx.beginPath();
