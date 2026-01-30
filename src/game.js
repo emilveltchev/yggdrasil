@@ -51,11 +51,11 @@ const Game = {
             // Update frame counter
             this.frameCount++;
             if (this.frameCount % 60 === 0) {
-                const aliveEnemies = this.enemies.filter(e => !e.dead).length;
+                const aliveEnemies = this.enemies ? this.enemies.filter(e => !e.dead).length : 0;
                 document.getElementById('debug').textContent = 
                     'v4 | ' + this.state + 
-                    ' | Enemies: ' + aliveEnemies +
-                    ' | Combo: ' + Player.comboCount;
+                    ' | E:' + aliveEnemies +
+                    ' | C:' + (Player.comboCount || 0);
             }
             
             // Update
@@ -322,12 +322,12 @@ const Game = {
 
 // Start the game when page loads
 window.addEventListener('load', () => {
-    console.log('Window loaded, starting game...');
+    console.log('Window loaded, starting game v4...');
     try {
         Game.init();
         console.log('Game initialized successfully');
     } catch(e) {
         console.error('Game init error:', e);
-        alert('Game error: ' + e.message);
+        document.getElementById('debug').textContent = 'INIT ERROR: ' + e.message;
     }
 });
